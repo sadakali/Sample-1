@@ -1,0 +1,92 @@
+## comment in C language
+
+#include <stdio.h>
+int main()
+{
+//  Single line comment  
+
+/* Multi line comment
+No Expectations, No Disappointments:
+How to Live From a Place of Infinite Possibility */ 
+
+    printf("Hello World \n");
+}
+
+
+## comments in Cpp language
+#include "iostream"
+
+// Single line comment
+
+/*Multi line comment
+No Expectations, No Disappointments:
+How to Live From a Place of Infinite Possibility*/ 
+
+int main(void) 
+{
+    std::cout << "Hello World\n";
+    return 0;
+}
+
+
+## comments in html language
+<html>
+<header><title>This is title</title></header>
+<body>
+<!-- Single line comment --> 
+Hello world
+<!-- Multi line comment
+No Expectations, No Disappointments:
+How to Live From a Place of Infinite Possibility --> 
+
+</body>
+</html>
+
+
+## comments in java language
+class A
+{
+public static void main(String args[])
+ {
+    System.out.println("Hello World");
+
+// Single line comment
+
+/*Multi line comment
+No Expectations, No Disappointments:
+How to Live From a Place of Infinite Possibility*/
+
+}
+}
+
+
+## comments in python 
+#!/usr/bin/python
+
+# Single line comment
+
+""" Multi line comment
+No Expectations, No Disappointments:
+How to Live From a Place of Infinite Possibility"""
+
+print('Hello world!')
+
+
+## comments in Shell 
+#!/bin/bash
+
+ echo " Hello World " 
+ 
+# Single ine comment
+
+<<COMMENT1
+Multi line comment
+No Expectations, No Disappointments:
+How to Live From a Place of Infinite Possibility
+COMMENT1
+
+<</
+Multi line comment
+No Expectations, No Disappointments:
+How to Live From a Place of Infinite Possibility
+/
