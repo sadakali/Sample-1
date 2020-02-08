@@ -1,4 +1,4 @@
-FROM centos:latest
+Rahams:latest
 
 # Build dependency
 RUN yum update -y &&\
