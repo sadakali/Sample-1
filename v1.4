@@ -1,0 +1,447 @@
+[33mcommit 2b20613be30dba673766708597ec5a3612f15277[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;33mtag: v1.4-l[m[33m, [m[1;33mtag: v1.4[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: sadakali <sadakali7966@gmail.com>
+Date:   Sat Feb 8 21:15:44 2020 +0530
+
+    Add files
+    
+    added files:
+    CMakeLists.txt
+    Dockerfile
+    config_cmake.h.in
+
+[1mdiff --git a/CMakeLists.txt b/CMakeLists.txt[m
+[1mnew file mode 100644[m
+[1mindex 0000000..6072dfe[m
+[1m--- /dev/null[m
+[1m+++ b/CMakeLists.txt[m
+[36m@@ -0,0 +1,226 @@[m
+[32m+[m[32mCMAKE_MINIMUM_REQUIRED(VERSION 3.2)[m
+[32m+[m
+[32m+[m[32mIF(POLICY CMP0066)[m
+[32m+[m[32m  CMAKE_POLICY(SET CMP0066 OLD)[m
+[32m+[m[32mENDIF()[m
+[32m+[m[32mIF(POLICY CMP0067)[m
+[32m+[m[32m  CMAKE_POLICY(SET CMP0067 NEW)[m
+[32m+[m[32mENDIF()[m
+[32m+[m
+[32m+[m[32mPROJECT(fish)[m
+[32m+[m
+[32m+[m[32m# We are C++11.[m
+[32m+[m[32mSET(CMAKE_CXX_STANDARD 11)[m
+[32m+[m[32mSET(DEFAULT_BUILD_TYPE "RelWithDebInfo")[m
+[32m+[m
+[32m+[m[32m# Use the default flags (#6296) but remove -DNDEBUG so that asserts remain enabled.[m
+[32m+[m[32mSTRING(REPLACE "-DNDEBUG" ""[m
+[32m+[m[32m  CMAKE_CXX_FLAGS_RELWITHDEBINFO[m
+[32m+[m[32m  "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")[m
+[32m+[m
+[32m+[m[32mSTRING(REPLACE "-DNDEBUG" ""[m
+[32m+[m[32m  CMAKE_CXX_FLAGS_RELEASE[m
+[32m+[m[32m  "${CMAKE_CXX_FLAGS_RELEASE}")[m
+[32m+[m
+[32m+[m[32mIF(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)[m
+[32m+[m[32m    MESSAGE(STATUS "Setting build type to default '${DEFAULT_BUILD_TYPE}'")[m
+[32m+[m[32m    SET(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}")[m
+[32m+[m[32mENDIF()[m
+[32m+[m
+[32m+[m[32m# Force colored warnings in Ninja's output, if the compiler has -fdiagnostics-color support.[m
+[32m+[m[32m# Rationale in https://github.com/ninja-build/ninja/issues/814[m
+[32m+[m[32mif (CMAKE_GENERATOR STREQUAL "Ninja" AND[m
+[32m+[m[32m    ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9) OR[m
+[32m+[m[32m     (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.5) OR[m
+[32m+[m[32m     (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.0)))[m
+[32m+[m[32m    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always")[m
+[32m+[m[32m    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always")[m
+[32m+[m[32mendif()[m
+[32m+[m[32m# Enable a whole bunch of warnings, but turn off:[m
+[32m+[m[32m# - implicit fallthrough because that does not recognize some cases where it's desired (and I *really* want this one!)[m
+[32m+[m[32m# - comment because we use a bunch of those, and they're not really all that harmful.[m
+[32m+[m[32m# - address, because that occurs for our mkostemp check (weak-linking requires us to compare `&mkostemp == nullptr`).[m
+[32m+[m[32m# - strict-aliasing, because on old GCCs (*Travis*) those are triggered by maybe.h, so you get it every time it is included.[m
+[32m+[m[32m# - redundant-move, because we have one that is required on old libc[m
+[32m+[m[32mset(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra \[m
+[32m+[m[32m-Wno-implicit-fallthrough \[m
+[32m+[m[32m-Wno-comment \[m
+[32m+[m[32m-Wno-address \[m
+[32m+[m[32m-Wno-strict-aliasing \[m
+[32m+[m[32m-Wno-redundant-move \[m
+[32m+[m[32m")[m
+[32m+[m
+[32m+[m[32m# Disable exception handling.[m
+[32m+[m[32mADD_COMPILE_OPTIONS(-fno-exceptions)[m
+[32m+[m
+[32m+[m[32m# Prefer the gold linker because it doesn't emit useless warnings about sys_nerr and _sys_errlist.[m
+[32m+[m[32mif (UNIX AND NOT APPLE)[m
+[32m+[m[32m  EXECUTE_PROCESS(COMMAND ${CMAKE_C_COMPILER} -fuse-ld=gold -Wl,--version[m
+[32m+[m[32m                  ERROR_QUIET OUTPUT_VARIABLE LD_VERSION)[m
+[32m+[m[32m  if ("${LD_VERSION}" MATCHES "GNU gold")[m
+[32m+[m[32m    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=gold")[m
+[32m+[m[32m  endif()[m
+[32m+[m[32mendif()[m
+[32m+[m
+[32m+[m[32m# Hide the CMake Rules directories in Xcode projects.[m
+[32m+[m[32mSOURCE_GROUP("CMake Rules" REGULAR_EXPRESSION "^$")[m
+[32m+[m
+[32m+[m[32m# Put source and header files at top level under targets.[m
+[32m+[m[32mSOURCE_GROUP("Source Files" REGULAR_EXPRESSION "^$")[m
+[32m+[m[32mSOURCE_GROUP("Header Files" REGULAR_EXPRESSION "^$")[m
+[32m+[m[32mSOURCE_GROUP("Builtins" REGULAR_EXPRESSION "builtin_.*")[m
+[32m+[m
+[32m+[m[32m# Support folders.[m
+[32m+[m[32mSET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)[m
+[32m+[m
+[32m+[m[32m# Work around issue where archive-built libs go in the wrong place.[m
+[32m+[m[32mSET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})[m
+[32m+[m
+[32m+[m[32mlist(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")[m
+[32m+[m
+[32m+[m[32mIF(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)[m
+[32m+[m[32m  SET(FISH_IN_TREE_BUILD TRUE)[m
+[32m+[m[32mELSE()[m
+[32m+[m[32m  SET(FISH_IN_TREE_BUILD FALSE)[m
+[32m+[m[32mENDIF()[m
+[32m+[m
+[32m+[m[32m# NetBSD does weird things with finding libraries,[m
+[32m+[m[32m# making the tests fail by failing to find pcre.[m
+[32m+[m[32m#[m
+[32m+[m[32m# Keep the rpath used to build.[m
+[32m+[m[32mIF(CMAKE_SYSTEM_NAME STREQUAL NetBSD)[m
+[32m+[m[32m  SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)[m
+[32m+[m[32mENDIF()[m
+[32m+[m
+[32m+[m[32m# All objects that the system needs to build fish, except fish.cpp[m
+[32m+[m[32mSET(FISH_SRCS[m
+[32m+[m[32m    src/autoload.cpp src/builtin.cpp src/builtin_bg.cpp src/builtin_bind.cpp[m
+[32m+[m[32m    src/builtin_block.cpp src/builtin_builtin.cpp src/builtin_cd.cpp[m
+[32m+[m[32m    src/builtin_command.cpp src/builtin_commandline.cpp[m
+[32m+[m[32m    src/builtin_complete.cpp src/builtin_contains.cpp src/builtin_disown.cpp[m
+[32m+[m[32m    src/builtin_echo.cpp src/builtin_emit.cpp src/builtin_exit.cpp[m
+[32m+[m[32m    src/builtin_fg.cpp src/builtin_function.cpp src/builtin_functions.cpp[m
+[32m+[m[32m    src/builtin_argparse.cpp src/builtin_history.cpp src/builtin_jobs.cpp[m
+[32m+[m[32m    src/builtin_math.cpp src/builtin_printf.cpp src/builtin_pwd.cpp[m
+[32m+[m[32m    src/builtin_random.cpp src/builtin_read.cpp src/builtin_realpath.cpp[m
+[32m+[m[32m    src/builtin_return.cpp src/builtin_set.cpp src/builtin_set_color.cpp[m
+[32m+[m[32m    src/builtin_source.cpp src/builtin_status.cpp src/builtin_string.cpp[m
+[32m+[m[32m    src/builtin_test.cpp src/builtin_ulimit.cpp src/builtin_wait.cpp src/builtin_eval.cpp[m
+[32m+[m[32m    src/color.cpp src/common.cpp src/complete.cpp src/env.cpp src/env_dispatch.cpp[m
+[32m+[m[32m    src/env_universal_common.cpp src/event.cpp src/exec.cpp src/expand.cpp[m
+[32m+[m[32m    src/fallback.cpp src/fish_version.cpp src/function.cpp src/highlight.cpp[m
+[32m+[m[32m    src/history.cpp src/history_file.cpp src/input.cpp src/input_common.cpp src/intern.cpp[m
+[32m+[m[32m    src/io.cpp src/iothread.cpp src/kill.cpp src/output.cpp src/pager.cpp[m
+[32m+[m[32m    src/parse_execution.cpp src/parse_productions.cpp src/parse_tree.cpp[m
+[32m+[m[32m    src/parse_util.cpp src/parser.cpp src/parser_keywords.cpp src/path.cpp[m
+[32m+[m[32m    src/postfork.cpp src/proc.cpp src/reader.cpp src/sanity.cpp src/screen.cpp[m
+[32m+[m[32m    src/signal.cpp src/tinyexpr.cpp src/tnode.cpp src/tokenizer.cpp src/utf8.cpp src/util.cpp[m
+[32m+[m[32m    src/wcstringutil.cpp src/wgetopt.cpp src/wildcard.cpp src/wutil.cpp[m
+[32m+[m[32m    src/future_feature_flags.cpp src/redirection.cpp src/topic_monitor.cpp[m
+[32m+[m[32m    src/flog.cpp src/trace.cpp src/timer.cpp src/null_terminated_array.cpp[m
+[32m+[m[32m    src/operation_context.cpp src/fd_monitor.cpp[m
+[32m+[m[32m)[m
+[32m+[m
+[32m+[m[32m# Header files are just globbed.[m
+[32m+[m[32mFILE(GLOB FISH_HEADERS src/*.h)[m
+[32m+[m
+[32m+[m[32m# Set up config.h[m
+[32m+[m[32mINCLUDE(cmake/ConfigureChecks.cmake)[m
+[32m+[m[32mINCLUDE(cmake/gettext.cmake)[m
+[32m+[m[32mCONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config_cmake.h.in[m
+[32m+[m[32m               ${CMAKE_CURRENT_BINARY_DIR}/config.h)[m
+[32m+[m[32mINCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})[m
+[32m+[m
+[32m+[m[32m# Set up standard directories.[m
+[32m+[m[32mINCLUDE(GNUInstallDirs)[m
+[32m+[m[32mADD_DEFINITIONS(-D_UNICODE=1[m
+[32m+[m[32m                -DLOCALEDIR="${CMAKE_INSTALL_FULL_LOCALEDIR}"[m
+[32m+[m[32m                -DPREFIX=L"${CMAKE_INSTALL_PREFIX}"[m
+[32m+[m[32m                -DDATADIR=L"${CMAKE_INSTALL_FULL_DATADIR}"[m
+[32m+[m[32m                -DSYSCONFDIR=L"${CMAKE_INSTALL_FULL_SYSCONFDIR}"[m
+[32m+[m[32m                -DBINDIR=L"${CMAKE_INSTALL_FULL_BINDIR}"[m
+[32m+[m[32m                -DDOCDIR=L"${CMAKE_INSTALL_FULL_DOCDIR}")[m
+[32m+[m
+[32m+[m[32m# Set up the machinery around FISH-BUILD-VERSION-FILE[m
+[32m+[m[32m# This defines the FBVF variable.[m
+[32m+[m[32mINCLUDE(Version)[m
+[32m+[m
+[32m+[m[32m# Let fish pick up when we're running out of the build directory without installing[m
+[32m+[m[32mGET_FILENAME_COMPONENT(REAL_CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}" REALPATH)[m
+[32m+[m[32mGET_FILENAME_COMPONENT(REAL_CMAKE_SOURCE_DIR "${CMAKE_SOURCE_DIR}" REALPATH)[m
+[32m+[m[32mADD_DEFINITIONS(-DCMAKE_BINARY_DIR="${REAL_CMAKE_BINARY_DIR}")[m
+[32m+[m[32mADD_DEFINITIONS(-DCMAKE_SOURCE_DIR="${REAL_CMAKE_SOURCE_DIR}")[m
+[32m+[m
+[32m+[m[32m# Teach fish_version.o to rebuild when FBVF changes.[m
+[32m+[m[32m# The standard C++ include detection machinery misses this.[m
+[32m+[m[32mSET_SOURCE_FILES_PROPERTIES(src/fish_version.cpp[m
+[32m+[m[32m                            PROPERTIES OBJECT_DEPENDS[m
+[32m+[m[32m                            ${CMAKE_CURRENT_BINARY_DIR}/${FBVF})[m
+[32m+[m
+[32m+[m[32m# Enable thread-safe errno on Solaris (#5611)[m
+[32m+[m[32mADD_DEFINITIONS(-D_REENTRANT)[m
+[32m+[m
+[32m+[m[32m# Set up PCRE2[m
+[32m+[m[32mINCLUDE(cmake/PCRE2.cmake)[m
+[32m+[m
+[32m+[m[32m# Define a function to link dependencies.[m
+[32m+[m[32mFUNCTION(FISH_LINK_DEPS target)[m
+[32m+[m[32m  TARGET_LINK_LIBRARIES(${target} fishlib)[m
+[32m+[m[32mENDFUNCTION(FISH_LINK_DEPS)[m
+[32m+[m
+[32m+[m[32m# Define libfish.a.[m
+[32m+[m[32mADD_LIBRARY(fishlib STATIC ${FISH_SRCS})[m
+[32m+[m[32mTARGET_SOURCES(fishlib PRIVATE ${FISH_HEADERS})[m
+[32m+[m[32mTARGET_LINK_LIBRARIES(fishlib[m
+[32m+[m[32m  ${CURSES_LIBRARY} ${CURSES_EXTRA_LIBRARY} Threads::Threads ${CMAKE_DL_LIBS}[m
+[32m+[m[32m  ${PCRE2_LIB} ${Intl_LIBRARIES} ${ATOMIC_LIBRARY})[m
+[32m+[m
+[32m+[m[32m# Define fish.[m
+[32m+[m[32mADD_EXECUTABLE(fish src/fish.cpp)[m
+[32m+[m[32mFISH_LINK_DEPS(fish)[m
+[32m+[m
+[32m+[m[32m# Define fish_indent.[m
+[32m+[m[32mADD_EXECUTABLE(fish_indent[m
+[32m+[m[32m               src/fish_indent.cpp src/print_help.cpp)[m
+[32m+[m[32mFISH_LINK_DEPS(fish_indent)[m
+[32m+[m
+[32m+[m[32m# Define fish_key_reader.[m
+[32m+[m[32mADD_EXECUTABLE(fish_key_reader[m
+[32m+[m[32m               src/fish_key_reader.cpp src/print_help.cpp)[m
+[32m+[m[32mFISH_LINK_DEPS(fish_key_reader)[m
+[32m+[m
+[32m+[m[32m# Set up the docs.[m
+[32m+[m[32mINCLUDE(cmake/Docs.cmake)[m
+[32m+[m
+[32m+[m[32m# A helper for running tests.[m
+[32m+[m[32mADD_EXECUTABLE(fish_test_helper src/fish_test_helper.cpp)[m
+[32m+[m
+[32m+[m[32m# Set up tests.[m
+[32m+[m[32mINCLUDE(cmake/Tests.cmake)[m
+[32m+[m
+[32m+[m[32m# Benchmarking support.[m
+[32m+[m[32mINCLUDE(cmake/Benchmark.cmake)[m
+[32m+[m
+[32m+[m[32m# Set up install.[m
+[32m+[m[32mINCLUDE(cmake/Install.cmake)[m
+[32m+[m
+[32m+[m[32m# Mac app.[m
+[32m+[m[32mINCLUDE(cmake/MacApp.cmake)[m
+[32m+[m
+[32m+[m[32m# Lint targets[m
+[32m+[m[32m# This could be implemented as target properties, but the script has the useful feature of only[m
+[32m+[m[32m# checking the currently-staged commands[m
+[32m+[m[32m# The generator expressions below rebuild the command line for the fishlib targets[m
+[32m+[m[32m# CMake does not support the "iquote" flag - https://gitlab.kitware.com/cmake/cmake/issues/15491[m
+[32m+[m[32mSET(LINT_ARGS "-D$<JOIN:$<TARGET_PROPERTY:fishlib,COMPILE_DEFINITIONS>, -D>" "-I$<JOIN:$<TARGET_PROPERTY:fishlib,INCLUDE_DIRECTORIES>, -I>")[m
+[32m+[m[32mADD_CUSTOM_TARGET(lint[m
+[32m+[m[32m    COMMAND build_tools/lint.fish -- ${LINT_ARGS}[m
+[32m+[m[32m    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"[m
+[32m+[m[32m)[m
+[32m+[m[32mADD_CUSTOM_TARGET(lint-all[m
+[32m+[m[32m    COMMAND build_tools/lint.fish --all -- ${LINT_ARGS}[m
+[32m+[m[32m    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"[m
+[32m+[m[32m)[m
+[32m+[m
+[32m+[m[32mINCLUDE(FeatureSummary)[m
+[32m+[m[32mFEATURE_SUMMARY(WHAT ALL)[m
+[1mdiff --git a/Dockerfile b/Dockerfile[m
+[1mnew file mode 100644[m
+[1mindex 0000000..02728cb[m
+[1m--- /dev/null[m
+[1m+++ b/Dockerfile[m
+[36m@@ -0,0 +1,19 @@[m
+[32m+[m[32mFROM centos:latest[m
+[32m+[m
+[32m+[m[32m# Build dependency[m
+[32m+[m[32mRUN yum update -y &&\[m
+[32m+[m[32m  yum install -y epel-release &&\[m
+[32m+[m[32m  yum install -y clang cmake3 gcc-c++ make ncurses-devel &&\[m
+[32m+[m[32m  yum clean all[m
+[32m+[m
+[32m+[m[32m# Test dependency[m
+[32m+[m[32mRUN yum install -y expect vim-common[m
+[32m+[m
+[32m+[m[32mADD . /src[m
+[32m+[m[32mWORKDIR /src[m
+[32m+[m
+[32m+[m[32m# Build fish[m
+[32m+[m[32mRUN cmake3 . &&\[m
+[32m+[m[32m  make &&\[m
+[32m+[m[32m  make install[m
+[32m+[m
+[1mdiff --git a/config_cmake.h.in b/config_cmake.h.in[m
+[1mnew file mode 100644[m
+[1mindex 0000000..4710942[m
+[1m--- /dev/null[m
+[1m+++ b/config_cmake.h.in[m
+[36m@@ -0,0 +1,173 @@[m
+[32m+[m[32m/* Define to 1 if you have the `backtrace_symbols' function. */[m
+[32m+[m[32m#cmakedefine HAVE_BACKTRACE_SYMBOLS 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if compiled on WSL */[m
+[32m+[m[32m#cmakedefine WSL 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `clock_gettime' function. */[m
+[32m+[m[32m#cmakedefine HAVE_CLOCK_GETTIME 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `ctermid_r' function. */[m
+[32m+[m[32m#cmakedefine HAVE_CTERMID_R 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `dirfd' function. */[m
+[32m+[m[32m#cmakedefine HAVE_DIRFD 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the <execinfo.h> header file. */[m
+[32m+[m[32m#cmakedefine HAVE_EXECINFO_H 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `flock' function. */[m
+[32m+[m[32m#cmakedefine HAVE_FLOCK 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `futimens' function. */[m
+[32m+[m[32m#cmakedefine HAVE_FUTIMENS 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `futimes' function. */[m
+[32m+[m[32m#cmakedefine HAVE_FUTIMES 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `getifaddrs' function. */[m
+[32m+[m[32m#cmakedefine HAVE_GETIFADDRS 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `getpwent' function. */[m
+[32m+[m[32m#cmakedefine HAVE_GETPWENT 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the 'getrusage' function. */[m
+[32m+[m[32m#cmakedefine HAVE_GETRUSAGE 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `gettext' function. */[m
+[32m+[m[32m#cmakedefine HAVE_GETTEXT 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `killpg' function. */[m
+[32m+[m[32m#cmakedefine HAVE_KILLPG 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `lrand48_r' function. */[m
+[32m+[m[32m#cmakedefine HAVE_LRAND48_R 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `mkostemp' function. */[m
+[32m+[m[32m#cmakedefine HAVE_MKOSTEMP 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the <curses.h> header file. */[m
+[32m+[m[32m#cmakedefine HAVE_CURSES_H 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the <ncurses/curses.h> header file. */[m
+[32m+[m[32m#cmakedefine HAVE_NCURSES_CURSES_H 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the <ncurses.h> header file. */[m
+[32m+[m[32m#cmakedefine HAVE_NCURSES_H 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the <ncurses/term.h> header file. */[m
+[32m+[m[32m#cmakedefine HAVE_NCURSES_TERM_H 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the <siginfo.h> header file. */[m
+[32m+[m[32m#cmakedefine HAVE_SIGINFO_H 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the <spawn.h> header file. */[m
+[32m+[m[32m#cmakedefine HAVE_SPAWN_H 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `std::wcscasecmp' function. */[m
+[32m+[m[32m#cmakedefine HAVE_STD__WCSCASECMP 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `std::wcsdup' function. */[m
+[32m+[m[32m#cmakedefine HAVE_STD__WCSDUP 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `std::wcsncasecmp' function. */[m
+[32m+[m[32m#cmakedefine HAVE_STD__WCSNCASECMP 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if `d_type' is a member of `struct dirent'. */[m
+[32m+[m[32m#cmakedefine HAVE_STRUCT_DIRENT_D_TYPE 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if `st_ctime_nsec' is a member of `struct stat'. */[m
+[32m+[m[32m#cmakedefine HAVE_STRUCT_STAT_ST_CTIME_NSEC 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if `st_mtimespec.tv_nsec' is a member of `struct stat'. */[m
+[32m+[m[32m#cmakedefine HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if `st_mtim.tv_nsec' is a member of `struct stat'. */[m
+[32m+[m[32m#cmakedefine HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if the sys_errlist array is available. */[m
+[32m+[m[32m#cmakedefine HAVE_SYS_ERRLIST 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the <sys/ioctl.h> header file. */[m
+[32m+[m[32m#cmakedefine HAVE_SYS_IOCTL_H 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the <sys/select.h> header file. */[m
+[32m+[m[32m#cmakedefine HAVE_SYS_SELECT_H 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the <sys/sysctl.h> header file. */[m
+[32m+[m[32m#cmakedefine HAVE_SYS_SYSCTL_H 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the <termios.h> header file. */[m
+[32m+[m[32m#cmakedefine HAVE_TERMIOS_H 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the <term.h> header file. */[m
+[32m+[m[32m#cmakedefine HAVE_TERM_H 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `wcscasecmp' function. */[m
+[32m+[m[32m#cmakedefine HAVE_WCSCASECMP 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `wcsdup' function. */[m
+[32m+[m[32m#cmakedefine HAVE_WCSDUP 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `wcslcpy' function. */[m
+[32m+[m[32m#cmakedefine HAVE_WCSLCPY 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `wcsncasecmp' function. */[m
+[32m+[m[32m#cmakedefine HAVE_WCSNCASECMP 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `wcsndup' function. */[m
+[32m+[m[32m#cmakedefine HAVE_WCSNDUP 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if you have the `wcstod_l' function. */[m
+[32m+[m[32m#cmakedefine HAVE_WCSTOD_L 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if the winsize struct and TIOCGWINSZ macro exist */[m
+[32m+[m[32m#cmakedefine HAVE_WINSIZE 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if the _nl_msg_cat_cntr symbol is exported. */[m
+[32m+[m[32m#cmakedefine HAVE__NL_MSG_CAT_CNTR 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if std::make_unique is available. */[m
+[32m+[m[32m#cmakedefine HAVE_STD__MAKE_UNIQUE 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if the _sys_errs array is available. */[m
+[32m+[m[32m#cmakedefine HAVE__SYS__ERRS 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 to disable ncurses macros that conflict with the STL */[m
+[32m+[m[32m#define NCURSES_NOMACROS 1[m
+[32m+[m
+[32m+[m[32m/* Define to 1 to disable curses macros that conflict with the STL */[m
+[32m+[m[32m#define NOMACROS 1[m
+[32m+[m
+[32m+[m[32m/* Define to the address where bug reports for this package should be sent. */[m
+[32m+[m[32m#define PACKAGE_BUGREPORT "https://github.com/fish-shell/fish-shell/issues"[m
+[32m+[m
+[32m+[m[32m/* Define to the full name of this package. */[m
+[32m+[m[32m#define PACKAGE_NAME "fish"[m
+[32m+[m
+[32m+[m[32m/* Define to 1 if tparm accepts a fixed amount of parameters. */[m
+[32m+[m[32m#cmakedefine TPARM_SOLARIS_KLUDGE 1[m
+[32m+[m
+[32m+[m[32m/* Enable GNU extensions on systems that have them.  */[m
+[32m+[m[32m#ifndef _GNU_SOURCE[m
+[32m+[m[32m# define _GNU_SOURCE 1[m
+[32m+[m[32m#endif[m
+[32m+[m
+[32m+[m[32m/* The size of wchar_t in bits. */[m
+[32m+[m[32m#define WCHAR_T_BITS ${WCHAR_T_BITS}[m
+[32m+[m
+[32m+[m[32m/* Define if xlocale.h is required for locale_t or wide character support */[m
+[32m+[m[32m#cmakedefine HAVE_XLOCALE_H 1[m
+[32m+[m
+[32m+[m[32m/* Enable large inode numbers on Mac OS X 10.5.  */[m
+[32m+[m[32m#ifndef _DARWIN_USE_64_BIT_INODE[m
+[32m+[m[32m# define _DARWIN_USE_64_BIT_INODE 1[m
+[32m+[m[32m#endif[m
+[32m+[m
+[32m+[m[32m#if __GNUC__ >= 3[m
+[32m+[m[32m#ifndef __warn_unused[m
+[32m+[m[32m#define __warn_unused __attribute__ ((warn_unused_result))[m
+[32m+[m[32m#endif[m
+[32m+[m[32m#else[m
+[32m+[m[32m#define __warn_unused[m
+[32m+[m[32m#endif[m
