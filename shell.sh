@@ -1,5 +1,5 @@
 #!/bin/bash
 
-echo "Enter your name: "
-read name
-echo $name
+echo "Enter your email: "
+read email
+echo $email
